@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Umbral Digital — Web Design & AI Agency · Querétaro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --black:     #0D0D0D;
+      --off-white: #F5F0E8;
+      --copper:    #C8703A;
+      --indigo:    #2A2A3E;
+      --sage:      #A0A090;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--black);
+      color: var(--off-white);
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 300;
+      overflow-x: hidden;
+    }
+
+    /* ── THRESHOLD ANIMATION ── */
+    #threshold {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none;
+    }
+    #threshold .half {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 50%;
+      background: var(--black);
+      transition: transform 0.9s cubic-bezier(0.76, 0, 0.24, 1);
+    }
+    #threshold .top { top: 0; }
+    #threshold .bot { bottom: 0; }
+    #threshold.open .top { transform: translateY(-100%); }
+    #threshold.open .bot { transform: translateY(100%); }
+    #threshold .line {
+      position: absolute;
+      top: 50%;
+      left: 10%;
+      width: 80%;
+      height: 1px;
+      background: var(--copper);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.6s ease 0.1s;
+    }
+    #threshold.line-visible .line { transform: scaleX(1); }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 50;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.4rem 4rem;
+      opacity: 0;
+      transition: opacity 0.6s ease 1.2s;
+      background: linear-gradient(to bottom, rgba(13,13,13,0.85) 0%, transparent 100%);
+    }
+    nav.visible { opacity: 1; }
+
+    .nav-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      color: var(--off-white);
+      text-decoration: none;
+    }
+    .nav-logo span { color: var(--copper); }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 2.5rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 2.5rem;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--sage);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--copper); }
+
+    /* ── LANGUAGE TOGGLE ── */
+    .lang-toggle {
+      display: flex;
+      align-items: center;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 2px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .lang-btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.12em;
+      padding: 0.4rem 0.75rem;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--sage);
+      transition: background 0.2s, color 0.2s;
+    }
+    .lang-btn.active {
+      background: var(--copper);
+      color: var(--black);
+    }
+    .lang-divider {
+      width: 1px;
+      height: 1.2rem;
+      background: rgba(255,255,255,0.1);
+    }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 8rem 4rem 5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-eyebrow {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--copper);
+      margin-bottom: 2rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease 1.4s, transform 0.5s ease 1.4s;
+    }
+    .hero-eyebrow.visible { opacity: 1; transform: none; }
+
+    .hero-headline {
+      font-family: 'Cormorant Garamond', serif;
+      font-weight: 300;
+      font-size: clamp(3.2rem, 7vw, 6.5rem);
+      line-height: 1.05;
+      max-width: 14ch;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.6s ease 1.55s, transform 0.6s ease 1.55s;
+    }
+    .hero-headline.visible { opacity: 1; transform: none; }
+    .hero-headline em { font-style: italic; color: var(--copper); }
+
+    .hero-sub {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--sage);
+      max-width: 44ch;
+      line-height: 1.7;
+      margin-bottom: 3rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease 1.7s, transform 0.5s ease 1.7s;
+    }
+    .hero-sub.visible { opacity: 1; transform: none; }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--off-white);
+      text-decoration: none;
+      border: 1px solid var(--copper);
+      padding: 1rem 2rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.5s ease 1.85s, transform 0.5s ease 1.85s, background 0.25s, color 0.25s;
+    }
+    .hero-cta.visible { opacity: 1; transform: none; }
+    .hero-cta:hover { background: var(--copper); color: var(--black); }
+
+    .hero-bg-text {
+      position: absolute;
+      bottom: -0.1em;
+      right: -0.02em;
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(8rem, 20vw, 18rem);
+      font-weight: 600;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(200,112,58,0.08);
+      line-height: 1;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .hero-scroll-hint {
+      position: absolute;
+      bottom: 2.5rem;
+      left: 4rem;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--sage);
+      opacity: 0;
+      transition: opacity 0.5s ease 2s;
+    }
+    .hero-scroll-hint.visible { opacity: 1; }
+    .scroll-line { width: 3rem; height: 1px; background: var(--sage); }
+
+    /* ── SERVICES ── */
+    #services {
+      background: var(--off-white);
+      color: var(--black);
+      padding: 7rem 4rem;
+    }
+    .section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--copper);
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      font-weight: 300;
+      line-height: 1.15;
+      margin-bottom: 4rem;
+      max-width: 22ch;
+    }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2px;
+    }
+    .service-card {
+      background: var(--black);
+      color: var(--off-white);
+      padding: 2.5rem 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .service-card::before {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0;
+      width: 100%; height: 3px;
+      background: var(--copper);
+      transform: scaleX(0);
+      transform-origin: left;
+      transition: transform 0.3s ease;
+    }
+    .service-card:hover::before { transform: scaleX(1); }
+    .service-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--copper);
+      letter-spacing: 0.15em;
+      margin-bottom: 1.5rem;
+    }
+    .service-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.6rem;
+      font-weight: 400;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+    .service-desc {
+      font-size: 0.88rem;
+      color: var(--sage);
+      line-height: 1.7;
+    }
+
+    /* ── WHY ── */
+    #why {
+      background: var(--indigo);
+      color: var(--off-white);
+      padding: 7rem 4rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5rem;
+      align-items: center;
+    }
+    #why .section-label { color: var(--copper); }
+    #why .section-title { color: var(--off-white); margin-bottom: 1.5rem; }
+    .why-body {
+      font-size: 0.95rem;
+      color: var(--sage);
+      line-height: 1.8;
+      margin-bottom: 2rem;
+    }
+    .why-right { display: flex; flex-direction: column; gap: 2rem; }
+    .why-stat { border-left: 2px solid var(--copper); padding-left: 1.5rem; }
+    .why-stat-num {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3rem;
+      font-weight: 300;
+      line-height: 1;
+      color: var(--off-white);
+    }
+    .why-stat-num span { color: var(--copper); }
+    .why-stat-label { font-size: 0.82rem; color: var(--sage); margin-top: 0.4rem; }
+
+    /* ── PROCESS ── */
+    #process {
+      background: var(--off-white);
+      color: var(--black);
+      padding: 7rem 4rem;
+    }
+    .process-steps {
+      margin-top: 4rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      border-top: 1px solid rgba(0,0,0,0.12);
+    }
+    .process-step {
+      padding: 2.5rem 2rem 2.5rem 0;
+      border-right: 1px solid rgba(0,0,0,0.12);
+    }
+    .process-step:last-child { border-right: none; }
+    .process-step-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--copper);
+      margin-bottom: 1rem;
+    }
+    .process-step-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.5rem;
+      font-weight: 400;
+      margin-bottom: 0.8rem;
+    }
+    .process-step-desc { font-size: 0.84rem; color: #555; line-height: 1.65; }
+
+    /* ── CTA ── */
+    #cta {
+      background: var(--black);
+      padding: 8rem 4rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #cta .cta-line { width: 4rem; height: 1px; background: var(--copper); margin: 0 auto 2rem; }
+    #cta .cta-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(2.4rem, 5vw, 4.5rem);
+      font-weight: 300;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+    #cta .cta-title em { color: var(--copper); font-style: italic; }
+    #cta .cta-sub {
+      font-size: 0.95rem;
+      color: var(--sage);
+      margin-bottom: 3rem;
+      max-width: 38ch;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.7;
+    }
+    .cta-btn {
+      display: inline-block;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      background: var(--copper);
+      color: var(--black);
+      text-decoration: none;
+      padding: 1.1rem 2.5rem;
+      transition: background 0.25s;
+      position: relative;
+      z-index: 2;
+    }
+    .cta-btn:hover { background: #d9844e; }
+    .cta-bg-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Cormorant Garamond', serif;
+      font-size: clamp(10rem, 25vw, 22rem);
+      font-weight: 600;
+      color: transparent;
+      -webkit-text-stroke: 1px rgba(200,112,58,0.06);
+      white-space: nowrap;
+      pointer-events: none;
+      user-select: none;
+    }
+    #cta .cta-inner { position: relative; z-index: 2; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--black);
+      border-top: 1px solid rgba(255,255,255,0.06);
+      padding: 2.5rem 4rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--off-white);
+    }
+    .footer-logo span { color: var(--copper); }
+    footer p {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--sage);
+    }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 768px) {
+      nav { padding: 1.2rem 1.5rem; }
+      .nav-links { display: none; }
+      .nav-right { gap: 1rem; }
+      #hero { padding: 7rem 1.5rem 4rem; }
+      #services { padding: 5rem 1.5rem; }
+      #why { grid-template-columns: 1fr; padding: 5rem 1.5rem; gap: 3rem; }
+      #process { padding: 5rem 1.5rem; }
+      .process-steps { grid-template-columns: 1fr; }
+      .process-step { border-right: none; border-bottom: 1px solid rgba(0,0,0,0.12); padding: 2rem 0; }
+      #cta { padding: 5rem 1.5rem; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      #threshold { display: none; }
+      nav, .hero-eyebrow, .hero-headline, .hero-sub, .hero-cta, .hero-scroll-hint {
+        transition: none !important; opacity: 1 !important; transform: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- THRESHOLD -->
+<div id="threshold">
+  <div class="line"></div>
+  <div class="half top"></div>
+  <div class="half bot"></div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo">Umbral<span>.</span>Digital</a>
+  <div class="nav-right">
+    <ul class="nav-links">
+      <li><a href="#services" data-es="Servicios" data-en="Services">Servicios</a></li>
+      <li><a href="#why" data-es="Nosotros" data-en="About">Nosotros</a></li>
+      <li><a href="#process" data-es="Proceso" data-en="Process">Proceso</a></li>
+      <li><a href="#cta" data-es="Contacto" data-en="Contact">Contacto</a></li>
+    </ul>
+    <div class="lang-toggle">
+      <button class="lang-btn active" id="btn-es" onclick="setLang('es')">ES</button>
+      <div class="lang-divider"></div>
+      <button class="lang-btn" id="btn-en" onclick="setLang('en')">EN</button>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg-text">Umbral</div>
+  <p class="hero-eyebrow visible"
+     data-es="Querétaro · Diseño Web &amp; IA"
+     data-en="Querétaro · Web Design &amp; AI">
+    Querétaro · Diseño Web &amp; IA
+  </p>
+  <h1 class="hero-headline visible">
+    <span data-es='Cruzando el <em>umbral</em> hacia lo digital'
+          data-en='Crossing the <em>threshold</em> into the digital'>
+      Cruzando el <em>umbral</em> hacia lo digital
+    </span>
+  </h1>
+  <p class="hero-sub visible"
+     data-es="Diseño web profesional e inteligencia artificial para negocios locales que quieren crecer. Bilingüe. Con raíces en Querétaro."
+     data-en="Professional web design and artificial intelligence for local businesses ready to grow. Bilingual. Rooted in Querétaro.">
+    Diseño web profesional e inteligencia artificial para negocios locales que quieren crecer. Bilingüe. Con raíces en Querétaro.
+  </p>
+  <a href="#cta" class="hero-cta visible"
+     data-es="Revisión gratuita →"
+     data-en="Free audit →">
+    Revisión gratuita →
+  </a>
+  <div class="hero-scroll-hint visible">
+    <div class="scroll-line"></div>
+    <span data-es="Descubrir" data-en="Discover">Descubrir</span>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section id="services">
+  <p class="section-label" data-es="Lo que hacemos" data-en="What we do">Lo que hacemos</p>
+  <h2 class="section-title"
+      data-es="Herramientas que trabajan mientras usted trabaja"
+      data-en="Tools that work while you work">
+    Herramientas que trabajan mientras usted trabaja
+  </h2>
+  <div class="services-grid">
+    <div class="service-card">
+      <p class="service-num">01</p>
+      <h3 class="service-name" data-es="Diseño Web" data-en="Web Design">Diseño Web</h3>
+      <p class="service-desc"
+         data-es="Sitios rápidos, profesionales y hechos a su medida. Nada de plantillas genéricas: su negocio merece una presencia única en línea."
+         data-en="Fast, professional sites built specifically for you. No generic templates — your business deserves a presence that stands out.">
+        Sitios rápidos, profesionales y hechos a su medida. Nada de plantillas genéricas: su negocio merece una presencia única en línea.
+      </p>
+    </div>
+    <div class="service-card">
+      <p class="service-num">02</p>
+      <h3 class="service-name" data-es="IA para Negocios" data-en="AI for Business">IA para Negocios</h3>
+      <p class="service-desc"
+         data-es="Automatizamos tareas repetitivas, respondemos clientes y generamos contenido — todo con inteligencia artificial integrada a su flujo de trabajo."
+         data-en="We automate repetitive tasks, handle customer inquiries, and generate content — AI integrated directly into your workflow.">
+        Automatizamos tareas repetitivas, respondemos clientes y generamos contenido — todo con inteligencia artificial integrada a su flujo de trabajo.
+      </p>
+    </div>
+    <div class="service-card">
+      <p class="service-num">03</p>
+      <h3 class="service-name" data-es="SEO Local" data-en="Local SEO">SEO Local</h3>
+      <p class="service-desc"
+         data-es="Aparezca cuando sus clientes lo buscan. Optimizamos su presencia en Google para que Querétaro lo encuentre primero."
+         data-en="Show up when your customers search. We optimize your Google presence so Querétaro finds you first.">
+        Aparezca cuando sus clientes lo buscan. Optimizamos su presencia en Google para que Querétaro lo encuentre primero.
+      </p>
+    </div>
+    <div class="service-card">
+      <p class="service-num">04</p>
+      <h3 class="service-name" data-es="Contenido &amp; Redes" data-en="Content &amp; Social">Contenido &amp; Redes</h3>
+      <p class="service-desc"
+         data-es="Estrategia de contenido respaldada por IA. Publicaciones, anuncios y mensajes que conectan con su comunidad — en español e inglés."
+         data-en="AI-powered content strategy. Posts, ads, and messaging that connect with your community — in English and Spanish.">
+        Estrategia de contenido respaldada por IA. Publicaciones, anuncios y mensajes que conectan con su comunidad — en español e inglés.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section id="why">
+  <div class="why-left">
+    <p class="section-label" data-es="Por qué Umbral" data-en="Why Umbral">Por qué Umbral</p>
+    <h2 class="section-title"
+        data-es="Tecnología de punta con raíces locales"
+        data-en="Cutting-edge technology with local roots">
+      Tecnología de punta con raíces locales
+    </h2>
+    <p class="why-body"
+       data-es="No somos una agencia en la Ciudad de México que no conoce su mercado. Estamos aquí, en Querétaro, entendemos a sus clientes y hablamos su idioma — literalmente."
+       data-en="We're not an agency in Mexico City that doesn't know your market. We're here in Querétaro — we understand your clients and speak their language. Literally.">
+      No somos una agencia en la Ciudad de México que no conoce su mercado. Estamos aquí, en Querétaro, entendemos a sus clientes y hablamos su idioma — literalmente.
+    </p>
+    <p class="why-body"
+       data-es="Trabajamos con las herramientas de inteligencia artificial más avanzadas del mundo para entregar resultados que antes sólo estaban al alcance de grandes empresas."
+       data-en="We work with the world's most advanced AI tools to deliver results that used to be available only to large corporations.">
+      Trabajamos con las herramientas de inteligencia artificial más avanzadas del mundo para entregar resultados que antes sólo estaban al alcance de grandes empresas.
+    </p>
+  </div>
+  <div class="why-right">
+    <div class="why-stat">
+      <div class="why-stat-num">48<span>h</span></div>
+      <div class="why-stat-label"
+           data-es="Tiempo promedio de entrega de sitio inicial"
+           data-en="Average delivery time for initial site">
+        Tiempo promedio de entrega de sitio inicial
+      </div>
+    </div>
+    <div class="why-stat">
+      <div class="why-stat-num">100<span>%</span></div>
+      <div class="why-stat-label"
+           data-es="Bilingüe — inglés y español en cada proyecto"
+           data-en="Bilingual — English and Spanish on every project">
+        Bilingüe — inglés y español en cada proyecto
+      </div>
+    </div>
+    <div class="why-stat">
+      <div class="why-stat-num">0</div>
+      <div class="why-stat-label"
+           data-es="Costo por la revisión digital inicial — sin compromisos"
+           data-en="Cost for your initial digital audit — no strings attached">
+        Costo por la revisión digital inicial — sin compromisos
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROCESS -->
+<section id="process">
+  <p class="section-label" data-es="Cómo trabajamos" data-en="How we work">Cómo trabajamos</p>
+  <h2 class="section-title"
+      data-es="Sencillo, rápido, sin sorpresas"
+      data-en="Simple, fast, no surprises">
+    Sencillo, rápido, sin sorpresas
+  </h2>
+  <div class="process-steps">
+    <div class="process-step">
+      <p class="process-step-label" data-es="Paso 01" data-en="Step 01">Paso 01</p>
+      <h3 class="process-step-name" data-es="Revisión gratuita" data-en="Free audit">Revisión gratuita</h3>
+      <p class="process-step-desc"
+         data-es="Analizamos su presencia digital actual y le decimos exactamente qué oportunidades está perdiendo."
+         data-en="We analyze your current digital presence and tell you exactly which opportunities you're missing.">
+        Analizamos su presencia digital actual y le decimos exactamente qué oportunidades está perdiendo.
+      </p>
+    </div>
+    <div class="process-step">
+      <p class="process-step-label" data-es="Paso 02" data-en="Step 02">Paso 02</p>
+      <h3 class="process-step-name" data-es="Propuesta clara" data-en="Clear proposal">Propuesta clara</h3>
+      <p class="process-step-desc"
+         data-es="Sin letra chica. Le presentamos un plan concreto con costos y tiempos definidos."
+         data-en="No fine print. We present a concrete plan with defined costs and timelines.">
+        Sin letra chica. Le presentamos un plan concreto con costos y tiempos definidos.
+      </p>
+    </div>
+    <div class="process-step">
+      <p class="process-step-label" data-es="Paso 03" data-en="Step 03">Paso 03</p>
+      <h3 class="process-step-name" data-es="Construcción" data-en="Build">Construcción</h3>
+      <p class="process-step-desc"
+         data-es="Trabajamos rápido con IA pero con revisión humana en cada etapa. Usted aprueba antes de publicar."
+         data-en="We move fast with AI, but with human review at every stage. You approve before anything goes live.">
+        Trabajamos rápido con IA pero con revisión humana en cada etapa. Usted aprueba antes de publicar.
+      </p>
+    </div>
+    <div class="process-step">
+      <p class="process-step-label" data-es="Paso 04" data-en="Step 04">Paso 04</p>
+      <h3 class="process-step-name" data-es="Soporte continuo" data-en="Ongoing support">Soporte continuo</h3>
+      <p class="process-step-desc"
+         data-es="No desaparecemos después de la entrega. Estamos disponibles para ajustes, actualizaciones y crecimiento."
+         data-en="We don't disappear after delivery. We're here for tweaks, updates, and growth.">
+        No desaparecemos después de la entrega. Estamos disponibles para ajustes, actualizaciones y crecimiento.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-bg-text">Digital</div>
+  <div class="cta-inner">
+    <div class="cta-line"></div>
+    <h2 class="cta-title">
+      <span data-es='¿Listo para cruzar el <em>umbral</em>?'
+            data-en='Ready to cross the <em>threshold</em>?'>
+        ¿Listo para cruzar el <em>umbral</em>?
+      </span>
+    </h2>
+    <p class="cta-sub"
+       data-es="Agende su revisión digital gratuita. Sin compromiso, sin presión — solo una conversación honesta sobre cómo crecer."
+       data-en="Schedule your free digital audit. No commitment, no pressure — just an honest conversation about how to grow.">
+      Agende su revisión digital gratuita. Sin compromiso, sin presión — solo una conversación honesta sobre cómo crecer.
+    </p>
+    <a href="mailto:hola@umbraldigital.mx" class="cta-btn"
+       data-es="Empezar ahora →"
+       data-en="Get started →">
+      Empezar ahora →
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Umbral<span>.</span>Digital</div>
+  <p data-es="© 2026 Umbral Digital · Querétaro, México" data-en="© 2026 Umbral Digital · Querétaro, Mexico">© 2026 Umbral Digital · Querétaro, México</p>
+  <p>hola@umbraldigital.mx</p>
+</footer>
+
+<script>
+  // ── THRESHOLD REVEAL ──
+  const threshold = document.getElementById('threshold');
+  const nav = document.getElementById('nav');
+
+  setTimeout(() => threshold.classList.add('line-visible'), 300);
+  setTimeout(() => threshold.classList.add('open'), 1000);
+  setTimeout(() => {
+    nav.classList.add('visible');
+    document.querySelectorAll('.hero-eyebrow, .hero-headline, .hero-sub, .hero-cta, .hero-scroll-hint')
+      .forEach(el => el.classList.add('visible'));
+  }, 1100);
+  setTimeout(() => threshold.style.display = 'none', 2200);
+
+  // ── LANGUAGE TOGGLE ──
+  let currentLang = 'es';
+
+  function setLang(lang) {
+    currentLang = lang;
+    document.documentElement.lang = lang;
+
+    // Toggle button states
+    document.getElementById('btn-es').classList.toggle('active', lang === 'es');
+    document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+
+    // Update all elements with data-es / data-en on the element itself
+    document.querySelectorAll('[data-es][data-en]').forEach(el => {
+      const val = el.getAttribute('data-' + lang);
+      if (val !== null) el.innerHTML = val;
+    });
+
+    // Update span children that carry the bilingual attrs (e.g. headline, cta title)
+    document.querySelectorAll('span[data-es][data-en]').forEach(el => {
+      const val = el.getAttribute('data-' + lang);
+      if (val !== null) el.innerHTML = val;
+    });
+  }
+</script>
+</body>
+</html>
